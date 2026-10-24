@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/simon_says.gd" id="2"]
@@ -9,6 +9,8 @@
 [ext_resource type="AudioStream" path="res://public/sounds/powerup-sound-effect.toolszone.net.wav" id="7"]
 [ext_resource type="Script" path="res://scripts/crawl.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/cutscene.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/tung_tung.gd" id="10"]
+[ext_resource type="AudioStream" path="res://public/sounds/hit-sound-effect.toolszone.net.wav" id="11"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -19,6 +21,15 @@ show_behind_parent = true
 
 [node name="Map" type="Sprite2D" parent="Lit"]
 centered = false
+
+[node name="TungTung" type="Node2D" parent="."]
+visible = false
+script = ExtResource("10")
+
+[node name="Footsteps" type="AudioStreamPlayer2D" parent="TungTung"]
+stream = ExtResource("11")
+max_distance = 900.0
+attenuation = 1.5
 
 [node name="Camera" type="Camera2D" parent="."]
 zoom = Vector2(1.25, 1.25)

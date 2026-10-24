@@ -39,6 +39,7 @@ Start, end and landmark positions for each map are listed in `MAPS` at the top o
 - **Darkness**: only what's in Demen's line of sight is lit. Everything else is black. Tumor glows and open secret walls only appear once you can see them. The start square stays visible.
 - **End beacon**: the yellow end always shows, glows and sends out pulsing rings, and a yellow arrow beside Demen always points toward it.
 - **Sounds**: flying into a wall plays the error sound. Taking damage (secret wall, wrong Simon Says note) plays the hurt sound. Every press on the Simon Says board plays the powerup sound.
+- **Final map (night 5)**: Tung Tung starts in the middle of the map and hunts Demen, pathing around the walls. He's slower than Demen, can only be seen in line of sight, and his footsteps (the hit sound) get louder as he gets closer. Each hit costs 5% line strength, with a short pause after each so you can get away.
 - **Simon Says**: touching the bell tumor pauses the night. The black board plays 5 cells; repeat them on the pink board (click, or Q W E / A S D / Z X C). Each wrong attempt costs 5% line strength (shown on the board) and replays the sequence. Finishing gives +5%.
 - **Backtrack**: every 8–15 s you're thrown back a random distance along the trail you actually flew. 30% of backtracks send you all the way to the start.
 - **Secret walls**: grey bars block you normally. After a backtrack sends you to the start, they glow red and become passable until the next backtrack. Each pass through costs 10% line strength.
@@ -53,6 +54,7 @@ Tuning constants are at the top of `scripts/main.gd`, `scripts/map_level.gd` and
 - `scripts/main.gd`: gameplay, darkness, backtrack, secret walls, drawing
 - `scripts/map_level.gd`: map definitions, reads walls from the image, collision and line of sight
 - `scripts/simon_says.gd`: the Simon Says minigame
+- `scripts/tung_tung.gd`: Tung Tung, the chaser on the final map
 - `scripts/story.gd`: all story text, in the order it's told
 - `scripts/crawl.gd` + `crawl.gdshader`: the Star Wars-style text crawl
 - `scripts/cutscene.gd`: stick-figure hospital cutscenes (placeholders for character art)

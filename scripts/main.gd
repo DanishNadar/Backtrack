@@ -14,6 +14,9 @@ const RESET_TO_START_CHANCE := 0.3  # share of backtracks that go all the way to
 const SECRET_PENALTY := 0.1         # line strength lost per pass through a grey secret wall
 const SIMON_PENALTY := 0.05         # line strength lost per wrong note in Simon Says
 const SIMON_REWARD := 0.05          # line strength gained for finishing Simon Says
+const TUNG_TUNG_DAMAGE := 0.05      # line strength lost per hit from Tung Tung
+const TUNG_TUNG_REACH := 30.0       # how close Tung Tung must be to land a hit
+const TUNG_TUNG_HIT_COOLDOWN := 1.2 # seconds between hits while he stays close
 const SPEED := 190.0                # pixels per second
 const RADIUS := 11.0                # Demen's collision radius
 const CRUMB_INTERVAL := 0.3         # how often the trail used for backtracking is recorded
@@ -49,6 +52,7 @@ var secret_open := false
 var in_secret := false
 var bumping := false
 var bell_rung := false
+var tung_tung_cooldown := 0.0
 var backtrack_timer := 0.0
 var flash := 0.0
 var hint := ""
@@ -58,6 +62,7 @@ var time := 0.0
 @onready var camera: Camera2D = $Camera
 @onready var lit: Node2D = $Lit
 @onready var map_sprite: Sprite2D = $Lit/Map
+@onready var tung_tung: Node2D = $TungTung
 @onready var screen: Node2D = $UI/Screen
 @onready var hud: Label = $UI/HUD
 @onready var simon: Control = $UI/SimonSays
@@ -149,8 +154,13 @@ func start_night() -> void:
 	camera.limit_bottom = int(level.size.y) + 40
 	camera.position = pos
 	camera.reset_smoothing()
+	tung_tung.setup(level)
+	tung_tung_cooldown = 0.0
 	_update_sight()
-	_show_hint("Night %d. Find the yellow light." % n)
+	if level.has_tung_tung:
+		_show_hint("Night %d. Find the yellow light. Something is walking in the dark..." % n)
+	else:
+		_show_hint("Night %d. Find the yellow light." % n)
 
 
 func _process(delta: float) -> void:
@@ -162,6 +172,8 @@ func _process(delta: float) -> void:
 		var pos_before := pos
 		_move(delta)
 		walking = mode == Mode.PLAYING and pos != pos_before
+		if tung_tung.active and mode == Mode.PLAYING:
+			_update_tung_tung(delta)
 		backtrack_timer -= delta
 		if backtrack_timer <= 0.0:
 			_backtrack()
@@ -172,10 +184,22 @@ func _process(delta: float) -> void:
 	elif not walking and walk_sound.playing:
 		walk_sound.stop()
 	camera.position = pos
+	# Like everything else, Tung Tung can only be seen in line of sight.
+	tung_tung.visible = tung_tung.active and mode == Mode.PLAYING and _in_sight(tung_tung.position)
 	_update_hud()
 	queue_redraw()
 	lit.queue_redraw()
 	screen.queue_redraw()
+
+
+## Tung Tung closes in; each time he reaches Demen it costs line strength.
+func _update_tung_tung(delta: float) -> void:
+	tung_tung.chase(pos, delta)
+	tung_tung_cooldown = maxf(0.0, tung_tung_cooldown - delta)
+	if tung_tung_cooldown <= 0.0 and pos.distance_to(tung_tung.position) < TUNG_TUNG_REACH:
+		tung_tung_cooldown = TUNG_TUNG_HIT_COOLDOWN
+		tung_tung.pause_after_hit()
+		_take_damage(TUNG_TUNG_DAMAGE, "Tung Tung hits you!")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -231,7 +255,7 @@ func _move(delta: float) -> void:
 		crumbs.append(pos)
 		crumb_timer = 0.0
 
-	if not bell_rung and pos.distance_to(level.bell) < TRIGGER_RADIUS:
+	if level.has_bell and not bell_rung and pos.distance_to(level.bell) < TRIGGER_RADIUS:
 		_start_minigame()
 	elif pos.distance_to(level.end) < TRIGGER_RADIUS:
 		_complete_night()
@@ -361,7 +385,7 @@ func _draw() -> void:
 	for t in level.tumors:
 		if _in_sight(t):
 			_draw_landmark(t, COLOR_TUMOR, 26.0, 0.2 + 0.25 * pulse)
-	if _in_sight(level.bell):
+	if level.has_bell and _in_sight(level.bell):
 		_draw_landmark(level.bell, COLOR_TUMOR, 46.0, 0.08 if bell_rung else 0.2 + 0.25 * pulse)
 
 	_draw_demen(self, pos, DEMEN_SCALE)

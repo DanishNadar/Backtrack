@@ -46,6 +46,24 @@ const MAPS := [
 			Vector2(208, 828), Vector2(480, 952), Vector2(920, 944),
 		],
 	},
+	# The final map: no bell, and Tung Tung hunts Demen from the middle.
+	{
+		"image": "res://public/maps/Final.png",
+		"start": Vector2(1038, 1202),
+		"end": Vector2(276, 82),
+		"tung_tung": Vector2(540, 750),
+		"tumors": [
+			Vector2(840, 72), Vector2(440, 80), Vector2(64, 120), Vector2(1008, 184),
+			Vector2(744, 240), Vector2(992, 280), Vector2(760, 332), Vector2(616, 352),
+			Vector2(968, 440), Vector2(712, 480), Vector2(304, 552), Vector2(120, 600),
+			Vector2(968, 676), Vector2(176, 708), Vector2(904, 792), Vector2(368, 824),
+			Vector2(160, 880), Vector2(676, 912), Vector2(1000, 960), Vector2(216, 984),
+			Vector2(820, 1008), Vector2(16, 1060), Vector2(464, 1144), Vector2(584, 1144),
+			Vector2(912, 1152), Vector2(320, 1168), Vector2(88, 1220), Vector2(960, 1232),
+			Vector2(852, 1312), Vector2(960, 1324), Vector2(196, 1368), Vector2(20, 1372),
+			Vector2(640, 1376),
+		],
+	},
 ]
 
 const CELL := 5  # collision / line-of-sight resolution, in map pixels
@@ -58,7 +76,10 @@ var texture: Texture2D
 var size := Vector2.ZERO
 var start := Vector2.ZERO
 var end := Vector2.ZERO
+var has_bell := false
 var bell := Vector2.ZERO
+var has_tung_tung := false
+var tung_tung_spawn := Vector2.ZERO
 var tumors: Array = []
 var secret_rects: Array[Rect2] = []
 var _cols := 0
@@ -74,10 +95,24 @@ static func for_night(night: int) -> MapLevel:
 	level.size = level.texture.get_size()
 	level.start = def.start
 	level.end = def.end
-	level.bell = def.bell
+	level.has_bell = def.has("bell")
+	level.bell = def.get("bell", Vector2.ZERO)
 	level.tumors = def.tumors
 	level._build_cells(level.texture.get_image())
+	level.has_tung_tung = def.has("tung_tung")
+	if level.has_tung_tung:
+		level.tung_tung_spawn = level.nearest_open(def.tung_tung, 16.0)
 	return level
+
+
+## The open spot closest to `p` where something of `radius` fits.
+func nearest_open(p: Vector2, radius: float) -> Vector2:
+	for r in range(0, 400, CELL):
+		for i in maxi(1, r):
+			var q := p + Vector2.from_angle(TAU * i / maxi(1, r)) * r
+			if not blocked(q, radius, false):
+				return q
+	return p
 
 
 func _build_cells(img: Image) -> void:
