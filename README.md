@@ -20,7 +20,7 @@ godot --path .
 
 ## The map
 
-Levels are drawn as images (`public/maps/*.png`). The game reads the walls straight from the pixels:
+Levels are drawn as images (`public/maps/*.png`). The game reads the walls straight from the pixels, and only what is drawn on the map exists; the map edges are solid:
 
 | On the map | Meaning |
 |---|---|
@@ -36,23 +36,25 @@ Start, end and landmark positions for each map are listed in `MAPS` at the top o
 
 ## Mechanics
 
-- **Darkness**: only what's in Demen's line of sight is lit. Everything else is black. Tumor glows, open secret walls and the road glow only appear once you can see them. The start square stays visible.
+- **Darkness**: only what's in Demen's line of sight is lit. Everything else is black. Tumor glows and open secret walls only appear once you can see them. The start square stays visible.
 - **End beacon**: the yellow end always shows, glows and sends out pulsing rings, and a yellow arrow beside Demen always points toward it.
 - **Sounds**: flying into a wall plays the error sound. Taking damage (secret wall, wrong Simon Says note) plays the hurt sound. Every press on the Simon Says board plays the powerup sound.
 - **Simon Says**: touching the bell tumor pauses the night. The black board plays 5 cells; repeat them on the pink board (click, or Q W E / A S D / Z X C). Each wrong attempt costs 5% line strength (shown on the board) and replays the sequence. Finishing gives +5%.
 - **Backtrack**: every 8–15 s you're thrown back a random distance along the trail you actually flew. 30% of backtracks send you all the way to the start.
 - **Secret walls**: grey bars block you normally. After a backtrack sends you to the start, they glow red and become passable until the next backtrack. Each pass through costs 10% line strength.
 - **Line strength**: starts at 25%. +15% for a night finished without using secret walls. At 0% Demen fades away (game over).
-- **Ragebait Road**: walking off the bottom edge of the map leads onto a blue road with a light at the end. The road never ends. Only a backtrack gets you out.
-- **Core memories**: reaching the end shows that night's memory text, then the next night begins.
+- **Story**: told in Star Wars-style text crawls (Enter skips) and stick-figure hospital cutscenes (Enter advances). Prologue crawl -> awakening cutscene -> "The Memory Game" crawl -> 5 nights, each ending in a core-memory crawl -> finale crawl and cutscene (his name, tears, then the doctor and daughter turn into butterflies) -> back to the title. Fading away plays the "Faded Away" crawl instead. All story text is in `scripts/story.gd`.
 
 Tuning constants are at the top of `scripts/main.gd`, `scripts/map_level.gd` and `scripts/game_state.gd`.
 
 ## Layout
 
 - `scenes/main.tscn`: main scene (camera, HUD and overlay UI)
-- `scripts/main.gd`: gameplay, darkness, backtrack, secret walls, road, drawing
+- `scripts/main.gd`: gameplay, darkness, backtrack, secret walls, drawing
 - `scripts/map_level.gd`: map definitions, reads walls from the image, collision and line of sight
 - `scripts/simon_says.gd`: the Simon Says minigame
-- `scripts/game_state.gd`: autoload with line strength, night counter and memory texts
+- `scripts/story.gd`: all story text, in the order it's told
+- `scripts/crawl.gd` + `crawl.gdshader`: the Star Wars-style text crawl
+- `scripts/cutscene.gd`: stick-figure hospital cutscenes (placeholders for character art)
+- `scripts/game_state.gd`: autoload with line strength and the night counter
 - `public/`: art (maps, Demen, tumors, start/end, Simon Says, sounds)

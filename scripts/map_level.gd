@@ -14,8 +14,6 @@ const MAPS := [
 			Vector2(720, 376), Vector2(496, 484), Vector2(908, 608), Vector2(744, 708),
 			Vector2(568, 732), Vector2(132, 772), Vector2(564, 1004), Vector2(28, 1480),
 		],
-		# Walking off this edge of the map leads onto the Ragebait Road.
-		"road_edge": SIDE_BOTTOM,
 	},
 	{
 		"image": "res://public/maps/2.png",
@@ -26,13 +24,33 @@ const MAPS := [
 			Vector2(860, 120), Vector2(252, 416), Vector2(784, 596),
 			Vector2(496, 648), Vector2(808, 924), Vector2(660, 1212),
 		],
-		"road_edge": SIDE_BOTTOM,
+	},
+	{
+		"image": "res://public/maps/3.png",
+		"start": Vector2(583, 57),
+		"end": Vector2(85, 1394),
+		"bell": Vector2(536, 856),
+		"tumors": [
+			Vector2(728, 176), Vector2(412, 244), Vector2(768, 360), Vector2(560, 404),
+			Vector2(356, 496), Vector2(836, 572), Vector2(392, 704), Vector2(620, 788),
+			Vector2(336, 896), Vector2(204, 1124), Vector2(336, 1220),
+		],
+	},
+	{
+		"image": "res://public/maps/4.png",
+		"start": Vector2(70, 1430),
+		"end": Vector2(533, 708),
+		"bell": Vector2(624, 96),
+		"tumors": [
+			Vector2(212, 224), Vector2(676, 336), Vector2(784, 476), Vector2(416, 576),
+			Vector2(208, 828), Vector2(480, 952), Vector2(920, 944),
+		],
 	},
 ]
 
 const CELL := 5  # collision / line-of-sight resolution, in map pixels
 const WALL_CLOSING := 2  # cells; seals the gaps the painted dashes leave in walls
-const MIN_SECRET_CELLS := 4  # smaller grey specks are ignored
+const MIN_SECRET_CELLS := 6  # smaller grey specks (icon outlines) are ignored
 
 enum { OPEN, WALL, SECRET }
 
@@ -42,7 +60,6 @@ var start := Vector2.ZERO
 var end := Vector2.ZERO
 var bell := Vector2.ZERO
 var tumors: Array = []
-var road_edge := SIDE_BOTTOM
 var secret_rects: Array[Rect2] = []
 var _cols := 0
 var _rows := 0
@@ -59,7 +76,6 @@ static func for_night(night: int) -> MapLevel:
 	level.end = def.end
 	level.bell = def.bell
 	level.tumors = def.tumors
-	level.road_edge = def.road_edge
 	level._build_cells(level.texture.get_image())
 	return level
 
@@ -146,15 +162,11 @@ func _in_grid(c: Vector2i) -> bool:
 	return c.x >= 0 and c.y >= 0 and c.x < _cols and c.y < _rows
 
 
-## Outside the map is solid, except past the Ragebait Road edge.
+## Outside the map is solid.
 func _cell(gx: int, gy: int) -> int:
 	if _in_grid(Vector2i(gx, gy)):
 		return _cells[gy * _cols + gx]
-	match road_edge:
-		SIDE_BOTTOM: return OPEN if gy >= _rows and gx >= 0 and gx < _cols else WALL
-		SIDE_TOP: return OPEN if gy < 0 and gx >= 0 and gx < _cols else WALL
-		SIDE_LEFT: return OPEN if gx < 0 and gy >= 0 and gy < _rows else WALL
-		_: return OPEN if gx >= _cols and gy >= 0 and gy < _rows else WALL
+	return WALL
 
 
 func _cells_under(p: Vector2, radius: float) -> Array[int]:
@@ -174,31 +186,21 @@ func overlaps_secret(p: Vector2, radius: float) -> bool:
 	return _cells_under(p, radius).has(SECRET)
 
 
-func past_road_edge(p: Vector2) -> bool:
-	match road_edge:
-		SIDE_BOTTOM: return p.y > size.y
-		SIDE_TOP: return p.y < 0.0
-		SIDE_LEFT: return p.x < 0.0
-		_: return p.x > size.x
-
-
-## Line-of-sight polygon around `origin`: one point per ray, stopping just
-## inside the first wall it hits so the wall face itself is lit.
+## Line-of-sight polygon around `origin`: one point per ray, stopping a little
+## inside the first wall it hits so the wall itself is lit (less for the thin
+## grey secret walls, so nothing behind them shows).
 func sight_polygon(origin: Vector2, secret_open: bool, rays: int, reach: float) -> PackedVector2Array:
 	var pts := PackedVector2Array()
 	var step := CELL * 0.8
-	var bounds := Rect2(Vector2.ZERO, size)
 	for i in rays:
 		var dir := Vector2.from_angle(TAU * i / rays)
 		var d := 0.0
 		while d < reach:
 			var q := origin + dir * (d + step)
-			if not bounds.has_point(q):
-				break
 			var c := _cell(floori(q.x / CELL), floori(q.y / CELL))
 			if c == WALL or (c == SECRET and not secret_open):
-				d += CELL
+				d += CELL * (2 if c == WALL else 1)
 				break
 			d += step
-		pts.append((origin + dir * d).clamp(Vector2.ZERO, size))
+		pts.append(origin + dir * d)
 	return pts
