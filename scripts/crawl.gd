@@ -1,5 +1,5 @@
 extends Control
-## Star Wars-style text crawl over a starfield. The text is drawn flat into a
+## Star Wars-style text crawl on plain black. The text is drawn flat into a
 ## SubViewport, then crawl.gdshader lays it on a plane tilting away from the
 ## viewer. Enter, Space or a click skips it.
 
@@ -13,8 +13,9 @@ const TITLE_GAP := 70.0      # space between title and body
 const DEPTH_SCALE := 700.0    # text pixels per unit of depth (how steeply the plane recedes)
 const TRAIL := 2.0           # depth units the last line travels before the crawl ends
 const FADE_OUT := 0.15       # share of the crawl spent fading out at the end
-const STARS := 160
-const COLOR_TEXT := Color(1.0, 0.85, 0.25)
+const COLOR_TEXT := Color(0.35, 0.7, 1.0)
+## Tried in order; the first one installed is used.
+const FONT_NAMES := ["Georgia", "Palatino Linotype", "Times New Roman", "serif"]
 
 const SHADER := preload("res://scripts/crawl.gdshader")
 
@@ -22,7 +23,7 @@ var _title := ""
 var _body := ""
 var _scroll := 0.0
 var _end := 1.0
-var _stars := PackedVector2Array()
+var _font := SystemFont.new()
 var _viewport: SubViewport
 var _page: Control
 var _plane: ColorRect
@@ -30,9 +31,7 @@ var _plane: ColorRect
 
 func _ready() -> void:
 	visible = false
-	var rng := RandomNumberGenerator.new()
-	for i in STARS:
-		_stars.append(Vector2(rng.randf(), rng.randf()))
+	_font.font_names = PackedStringArray(FONT_NAMES)
 
 	_viewport = SubViewport.new()
 	_viewport.transparent_bg = true
@@ -56,9 +55,9 @@ func _ready() -> void:
 func play(title: String, body: String) -> void:
 	_title = title
 	_body = body
-	var font := ThemeDB.fallback_font
+	var font := _font
 	var height := _title_height() + TITLE_GAP \
-		+ font.get_multiline_string_size(_body, HORIZONTAL_ALIGNMENT_FILL, TEXT_WIDTH, BODY_SIZE).y
+		+ font.get_multiline_string_size(_body, HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, BODY_SIZE).y
 	_viewport.size = Vector2i(TEXT_WIDTH, ceili(height))
 	_page.size = Vector2(_viewport.size)
 	_page.queue_redraw()
@@ -70,7 +69,7 @@ func play(title: String, body: String) -> void:
 
 
 func _title_height() -> float:
-	return ThemeDB.fallback_font.get_multiline_string_size(
+	return _font.get_multiline_string_size(
 		_title, HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, TITLE_SIZE).y
 
 
@@ -78,7 +77,6 @@ func _process(delta: float) -> void:
 	if not visible:
 		return
 	_scroll += SPEED * delta
-	queue_redraw()  # twinkling stars
 	_plane.material.set_shader_parameter("scroll", _scroll)
 	var left := 1.0 - _scroll / _end
 	_plane.modulate.a = clampf(left / FADE_OUT, 0.0, 1.0)
@@ -104,17 +102,14 @@ func _input(event: InputEvent) -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color.BLACK)
-	for i in _stars.size():
-		var twinkle := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.001 * (1.0 + i % 5) + i)
-		draw_circle(_stars[i] * size, 1.0 + (i % 3) * 0.4, Color(1, 1, 1, 0.25 + 0.5 * twinkle))
 	draw_string(ThemeDB.fallback_font, Vector2(0, size.y - 16.0), "Enter: skip",
 		HORIZONTAL_ALIGNMENT_RIGHT, size.x - 16.0, 14, Color(1, 1, 1, 0.4))
 
 
-## The flat page that the shader tilts: centred title, justified body.
+## The flat page that the shader tilts: centred title and body.
 func _draw_page() -> void:
-	var font := ThemeDB.fallback_font
+	var font := _font
 	_page.draw_multiline_string(font, Vector2(0, font.get_ascent(TITLE_SIZE)), _title,
 		HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, TITLE_SIZE, -1, COLOR_TEXT)
 	_page.draw_multiline_string(font, Vector2(0, _title_height() + TITLE_GAP + font.get_ascent(BODY_SIZE)), _body,
-		HORIZONTAL_ALIGNMENT_FILL, TEXT_WIDTH, BODY_SIZE, -1, COLOR_TEXT)
+		HORIZONTAL_ALIGNMENT_CENTER, TEXT_WIDTH, BODY_SIZE, -1, COLOR_TEXT)
