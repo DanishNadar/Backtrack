@@ -2,8 +2,7 @@ extends Node
 ## Progress that carries across nights (autoloaded as GameState).
 
 const START_STRENGTH := 0.25   # you begin mostly faded
-const GAIN_PER_NIGHT := 0.15   # earned by finishing a maze honestly
-const CHEAT_PENALTY := 0.3     # lost per restricted shortcut used
+const GAIN_PER_NIGHT := 0.15   # earned by finishing a night without secret walls
 
 const MEMORIES: Array[String] = [
 	"CORE MEMORY — The Kitchen\n\nLeft, left, then straight ahead. The same way you walked to the kettle every morning for forty years.\nA nurse sets down a cup of tea. You reach for the handle before you see it.",

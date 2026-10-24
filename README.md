@@ -1,6 +1,6 @@
 # Backtrack — The Ragebaiter's Guide to the Void
 
-A 2D labyrinth game about patterns, memory and ragebait. A faded, glowing butterfly (a 67-year-old recovering from a coma) navigates a new maze of their own brain every night to recover a core memory.
+A 2D labyrinth game about patterns, memory and ragebait. Demen, a faded, glowing butterfly (a 67-year-old recovering from a coma), flies through a hand-drawn map of their own brain every night to recover a core memory.
 
 ## Running
 
@@ -14,27 +14,45 @@ godot --path .
 
 | Key | Action |
 |---|---|
-| Arrows / WASD | Move |
-| Space | Take the restricted shortcut (only when offered) |
+| Enter / click | Start the game from the title screen |
+| Arrows / WASD | Fly |
 | Enter / Space | Continue after a memory |
 
-## MVP mechanics
+## The map
 
-- **Brain look**: the floor is a dark purple gradient and the walls are wobbly pink "brain folds".
-- **Colour code**: Purple = Puzzle (the maze), Green = Go (the exit), Red = Restricted (the cheat shortcut), Blue = Ragebait Road.
-- **Fog of war**: you only see straight down the corridors from where you stand. The start (lavender ring) and the goal (green light) are always visible. Paths you've walked are not remembered.
-- **Ragebait Road**: one cell on the east edge opens onto a blue road with a green light at the far end. The road never ends and the light never gets closer, while hints keep telling you you're almost there. You can't turn around, so only a backtrack gets you out.
-- **No turning back**: you can't reverse into the cell you just left. At a dead end you have to wait for the backtrack.
-- **Backtrack**: every 8–15 s you're thrown back a random distance along the path you walked. There's a 10% chance it sends you to the start.
-- **Restricted shortcut**: when you're sent to the start, a red restricted tile opens for 5 s. Taking it drops you about 80% of the way to the goal, but costs line strength.
-- **Line strength**: starts at 25%. +15% for each honest night, −30% for each shortcut used. At 0% you fade away (game over).
-- **Core memories**: reaching the goal shows that night's memory text, then the next, larger maze begins.
+Levels are drawn as images (`public/maps/*.png`). The game reads the walls straight from the pixels:
 
-Tuning constants are at the top of `scripts/main.gd` and `scripts/game_state.gd`.
+| On the map | Meaning |
+|---|---|
+| Purple ground | Path |
+| Pink bars | Walls that can't be crossed |
+| Grey bars | Secret walls (see below) |
+| Green square | Start |
+| Yellow square | End |
+| Red "67" / crab tumors | Landmarks; they glow red so you can orient yourself |
+| Bell tumor | Starts the Simon Says minigame |
+
+Start, end and landmark positions for each map are listed in `MAPS` at the top of `scripts/map_level.gd`. To add a map, drop the PNG in `public/maps/` and add an entry there. Nights beyond the number of maps cycle back through them.
+
+## Mechanics
+
+- **Darkness**: only what's in Demen's line of sight is lit. Everything else is black. Tumor glows, open secret walls and the road glow only appear once you can see them. The start square stays visible.
+- **End beacon**: the yellow end always shows, glows and sends out pulsing rings, and a yellow arrow beside Demen always points toward it.
+- **Sounds**: flying into a wall plays the error sound. Taking damage (secret wall, wrong Simon Says note) plays the hurt sound. Every press on the Simon Says board plays the powerup sound.
+- **Simon Says**: touching the bell tumor pauses the night. The black board plays 5 cells; repeat them on the pink board (click, or Q W E / A S D / Z X C). Each wrong attempt costs 5% line strength (shown on the board) and replays the sequence. Finishing gives +5%.
+- **Backtrack**: every 8–15 s you're thrown back a random distance along the trail you actually flew. 30% of backtracks send you all the way to the start.
+- **Secret walls**: grey bars block you normally. After a backtrack sends you to the start, they glow red and become passable until the next backtrack. Each pass through costs 10% line strength.
+- **Line strength**: starts at 25%. +15% for a night finished without using secret walls. At 0% Demen fades away (game over).
+- **Ragebait Road**: walking off the bottom edge of the map leads onto a blue road with a light at the end. The road never ends. Only a backtrack gets you out.
+- **Core memories**: reaching the end shows that night's memory text, then the next night begins.
+
+Tuning constants are at the top of `scripts/main.gd`, `scripts/map_level.gd` and `scripts/game_state.gd`.
 
 ## Layout
 
-- `scenes/main.tscn`: main scene (maze node + HUD/overlay UI)
-- `scripts/main.gd`: gameplay, fog, backtrack, shortcut, drawing
-- `scripts/maze_generator.gd`: maze generation (recursive backtracker + loops) and BFS solver
-- `scripts/game_state.gd`: autoload with strength, night counter and memory texts
+- `scenes/main.tscn`: main scene (camera, HUD and overlay UI)
+- `scripts/main.gd`: gameplay, darkness, backtrack, secret walls, road, drawing
+- `scripts/map_level.gd`: map definitions, reads walls from the image, collision and line of sight
+- `scripts/simon_says.gd`: the Simon Says minigame
+- `scripts/game_state.gd`: autoload with line strength, night counter and memory texts
+- `public/`: art (maps, Demen, tumors, start/end, Simon Says, sounds)

@@ -1,11 +1,46 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/simon_says.gd" id="2"]
+[ext_resource type="AudioStream" path="res://public/sounds/error-sound-effect.wav" id="3"]
+[ext_resource type="AudioStream" path="res://public/sounds/hurt-sound-effect.wav" id="4"]
+[ext_resource type="AudioStream" path="res://public/sounds/walking-sound.wav" id="5"]
+[ext_resource type="Texture2D" path="res://public/assets/startGame.png" id="6"]
+[ext_resource type="AudioStream" path="res://public/sounds/powerup-sound-effect.toolszone.net.wav" id="7"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
 
+[node name="Camera" type="Camera2D" parent="."]
+zoom = Vector2(1.25, 1.25)
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0
+
+[node name="ErrorSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3")
+
+[node name="HurtSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4")
+
+[node name="WalkSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5")
+
 [node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Screen" type="Node2D" parent="UI"]
+
+[node name="SimonSays" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2")
+
+[node name="PressSound" type="AudioStreamPlayer" parent="UI/SimonSays"]
+stream = ExtResource("7")
 
 [node name="HUD" type="Label" parent="UI"]
 offset_left = 16.0
@@ -36,3 +71,62 @@ grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
+
+[node name="Title" type="ColorRect" parent="UI"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Tagline" type="Label" parent="UI/Title"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 80.0
+offset_right = 400.0
+offset_bottom = 120.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "The Ragebaiter's Guide to the Void"
+horizontal_alignment = 1
+
+[node name="StartButton" type="TextureButton" parent="UI/Title"]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -144.0
+offset_top = -144.0
+offset_right = 144.0
+offset_bottom = 144.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("6")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Prompt" type="Label" parent="UI/Title"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -120.0
+offset_right = 400.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 0.7)
+text = "Click to start  ·  or press Enter"
+horizontal_alignment = 1
