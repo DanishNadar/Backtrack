@@ -1,4 +1,4 @@
-# Backtrack — The Ragebaiter's Guide to the Void
+# Backtrack - The Ragebaiter's Guide to the Void
 
 A 2D labyrinth game about patterns, memory and ragebait. Demen, a faded, glowing butterfly (a 67-year-old recovering from a coma), flies through a hand-drawn map of their own brain every night to recover a core memory.
 
@@ -14,6 +14,7 @@ godot --path .
 
 | Key | Action |
 |---|---|
+| Enter / Space / click | Skip the intro video |
 | Enter / click | Start the game from the title screen |
 | Arrows / WASD | Fly |
 | Enter / Space | Continue after a memory |
@@ -44,7 +45,9 @@ Start, end and landmark positions for each map are listed in `MAPS` at the top o
 - **Backtrack**: every 8–15 s you're thrown back a random distance along the trail you actually flew. 30% of backtracks send you all the way to the start.
 - **Secret walls**: grey bars block you normally. After a backtrack sends you to the start, they glow red and become passable until the next backtrack. Each pass through costs 10% line strength.
 - **Line strength**: starts at 25%. +15% for a night finished without using secret walls. At 0% Demen fades away (game over).
-- **Story**: told in Star Wars-style text crawls (Enter skips) and stick-figure hospital cutscenes (Enter advances). Prologue crawl -> awakening cutscene -> "The Memory Game" crawl -> 5 nights, each ending in a core-memory crawl -> finale crawl and cutscene (his name, tears, then the doctor and daughter turn into butterflies) -> back to the title. Fading away plays the "Faded Away" crawl instead. All story text is in `scripts/story.gd`.
+- **Voice acting**: drop recordings into `public/voice/` named after each line's id (`awakening_03_doctor.wav`, `memory_1.wav`, …) and they play automatically. Every file name, and the full script, is in `public/voice/README.md`.
+- **Intro video**: `public/Intro.mp4` plays once on launch, then the start screen appears. Godot can only play Ogg Theora video, so the game plays `public/Intro.ogv`, converted from the MP4. If you change the MP4, re-convert it with `ffmpeg -i public/Intro.mp4 -c:v libtheora -q:v 10 -g 1 -c:a libvorbis -q:a 6 public/Intro.ogv` (`-g 1` stores every frame whole; without it this low-frame-rate cartoon breaks up into artifacts).
+- **Story**: told in Star Wars-style text crawls (Enter skips) and stick-figure hospital cutscenes (Enter advances). Intro video (the backstory) -> awakening cutscene -> "The Memory Game" crawl -> 5 nights, each ending in a core-memory crawl -> finale crawl and cutscene (his name, tears, then the doctor and daughter turn into butterflies) -> back to the title. Fading away plays the "Faded Away" crawl instead. All story text is in `scripts/story.gd`.
 
 Tuning constants are at the top of `scripts/main.gd`, `scripts/map_level.gd` and `scripts/game_state.gd`.
 
@@ -56,6 +59,7 @@ Tuning constants are at the top of `scripts/main.gd`, `scripts/map_level.gd` and
 - `scripts/simon_says.gd`: the Simon Says minigame
 - `scripts/tung_tung.gd`: Tung Tung, the chaser on the final map
 - `scripts/story.gd`: all story text, in the order it's told
+- `scripts/voice.gd`: finds the recorded voice line for each piece of story text
 - `scripts/crawl.gd` + `crawl.gdshader`: the Star Wars-style text crawl
 - `scripts/cutscene.gd`: stick-figure hospital cutscenes (placeholders for character art)
 - `scripts/game_state.gd`: autoload with line strength and the night counter

@@ -4,14 +4,9 @@ extends RefCounted
 ## [title, body] pairs shown by crawl.gd; cutscenes are lists of beats played
 ## by cutscene.gd.
 ##
-## Beat order: PROLOGUE crawl -> AWAKENING cutscene -> DREAM crawl ->
-## nights 1..MEMORIES.size() (a MEMORIES crawl after each) -> FINALE crawl ->
-## FINALE cutscene. Fading away at any point plays the FADED crawl instead.
-
-const PROLOGUE := [
-	"BACKTRACK\nThe Ragebaiter's Guide to the Void",
-	"Demen (Anakin Gilgamesh John-Smith) was once a joyful young soul. He played outside every single day and got plenty of sunshine.\n\nUntil one day, his life changed forever.\n\nHe was 17 years old, playing ball on the street with a bunch of young folk, when a distracted driver hit him and sent him flying into a well.\n\nA wishing well.\n\nIn agonizing pain, he made his final wish: a daughter who was immortal.",
-]
+## Beat order (the intro video tells the backstory first): AWAKENING cutscene
+## -> DREAM crawl -> nights 1..MEMORIES.size() (a MEMORIES crawl after each)
+## -> FINALE crawl -> FINALE cutscene. Fading away at any point plays the FADED crawl instead.
 
 ## Beats: "text" is the caption, "speaker" (optional) prefixes it, and
 ## "event" (optional) triggers an animation in the cutscene.

@@ -38,15 +38,20 @@ var _butterflies: Array = [] # [position, velocity, phase]
 var _alpha := {"doctor": 1.0, "daughter": 1.0}
 var _vanishing := {}
 var _rng := RandomNumberGenerator.new()
+var _scene := ""
+var _voice := AudioStreamPlayer.new()
 
 
 func _ready() -> void:
 	visible = false
+	add_child(_voice)
 
 
-## Plays `beats`; Demen lies in bed if `lying`, otherwise sits up.
-func play(beats: Array, lying: bool) -> void:
+## Plays `beats`; Demen lies in bed if `lying`, otherwise sits up. `scene`
+## names the cutscene's voice lines (see Voice.beat_id).
+func play(beats: Array, lying: bool, scene: String) -> void:
 	_beats = beats
+	_scene = scene
 	_lying = lying
 	_index = 0
 	_crying = false
@@ -60,6 +65,9 @@ func play(beats: Array, lying: bool) -> void:
 
 
 func _start_beat() -> void:
+	_voice.stream = Voice.load_line(Voice.beat_id(_scene, _index, _beats[_index]))
+	if _voice.stream:
+		_voice.play()
 	match _beats[_index].get("event", ""):
 		"cry":
 			_crying = true
@@ -79,6 +87,7 @@ func _vanish(who: String) -> void:
 
 
 func _advance() -> void:
+	_voice.stop()
 	_index += 1
 	if _index >= _beats.size():
 		visible = false

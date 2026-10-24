@@ -27,10 +27,12 @@ var _font := SystemFont.new()
 var _viewport: SubViewport
 var _page: Control
 var _plane: ColorRect
+var _voice := AudioStreamPlayer.new()
 
 
 func _ready() -> void:
 	visible = false
+	add_child(_voice)
 	_font.font_names = PackedStringArray(FONT_NAMES)
 
 	_viewport = SubViewport.new()
@@ -51,8 +53,13 @@ func _ready() -> void:
 	add_child(_plane)
 
 
-## Shows a crawl; `finished` is emitted when it has scrolled away or is skipped.
-func play(title: String, body: String) -> void:
+## Shows a crawl, narrated by the recording for `voice_id` if there is one.
+## `finished` is emitted once it has scrolled away and the narration is over,
+## or when it's skipped.
+func play(title: String, body: String, voice_id: String) -> void:
+	_voice.stream = Voice.load_line(voice_id)
+	if _voice.stream:
+		_voice.play()
 	_title = title
 	_body = body
 	var font := _font
@@ -80,11 +87,12 @@ func _process(delta: float) -> void:
 	_plane.material.set_shader_parameter("scroll", _scroll)
 	var left := 1.0 - _scroll / _end
 	_plane.modulate.a = clampf(left / FADE_OUT, 0.0, 1.0)
-	if _scroll >= _end:
+	if _scroll >= _end and not _voice.playing:
 		_finish()
 
 
 func _finish() -> void:
+	_voice.stop()
 	visible = false
 	finished.emit()
 

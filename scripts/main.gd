@@ -38,7 +38,7 @@ const COLOR_GLOW := Color(0.6, 0.85, 1.0)
 
 const DEMEN_SOURCE: Texture2D = preload("res://public/assets/Demen.png")
 
-enum Mode { TITLE, STORY, PLAYING, MINIGAME }
+enum Mode { INTRO, TITLE, STORY, PLAYING, MINIGAME }
 
 var rng := RandomNumberGenerator.new()
 var demen: Texture2D
@@ -58,6 +58,7 @@ var flash := 0.0
 var hint := ""
 var hint_timer := 0.0
 var time := 0.0
+var title_voice := AudioStreamPlayer.new()  # reads the title on the start screen
 
 @onready var camera: Camera2D = $Camera
 @onready var lit: Node2D = $Lit
@@ -73,6 +74,7 @@ var time := 0.0
 @onready var walk_sound: AudioStreamPlayer = $WalkSound
 @onready var title: ColorRect = $UI/Title
 @onready var start_button: TextureButton = $UI/Title/StartButton
+@onready var intro: VideoStreamPlayer = $UI/Intro
 
 
 func _ready() -> void:
@@ -84,38 +86,70 @@ func _ready() -> void:
 	simon.finished.connect(_on_simon_finished)
 	start_button.pressed.connect(_begin_game)
 	cutscene.demen = demen
-	_show_title()
+	intro.finished.connect(_end_intro)
+	title_voice.stream = Voice.load_line("title")
+	add_child(title_voice)
+	_show_title(false)
+	_play_intro()
+
+
+## The intro video plays once, on launch, over the title screen. Enter, Space
+## or a click skips it.
+func _play_intro() -> void:
+	mode = Mode.INTRO
+	title.visible = false
+	intro.visible = true
+	intro.play()
+
+
+func _end_intro() -> void:
+	if mode != Mode.INTRO:
+		return
+	intro.stop()
+	intro.visible = false
+	mode = Mode.TITLE
+	title.visible = true
+	start_button.grab_focus()
+	_announce_title()
 
 
 ## Resets progress and shows the title screen, with night 1 loaded behind it
-## so there's always a world to draw.
-func _show_title() -> void:
+## so there's always a world to draw. The title is read aloud unless the
+## intro video is about to play over it.
+func _show_title(announce := true) -> void:
 	GameState.reset()
 	start_night()
 	mode = Mode.TITLE
 	title.visible = true
 	start_button.grab_focus()
+	if announce:
+		_announce_title()
+
+
+func _announce_title() -> void:
+	if title_voice.stream:
+		title_voice.play()
 
 
 ## The opening beats of the story (see story.gd), then night 1.
 func _begin_game() -> void:
 	if mode != Mode.TITLE:
 		return
+	title_voice.stop()
 	title.visible = false
 	mode = Mode.STORY
-	await _play_crawl(Story.PROLOGUE)
-	await _play_cutscene(Story.AWAKENING, true)
-	await _play_crawl(Story.DREAM)
+	await _play_cutscene(Story.AWAKENING, true, "awakening")
+	await _play_crawl(Story.DREAM, "dream")
 	start_night()
 
 
-func _play_crawl(text: Array, extra := "") -> void:
-	crawl.play(text[0], text[1] + extra)
+func _play_crawl(text: Array, voice_id: String, extra := "") -> void:
+	crawl.play(text[0], text[1] + extra, voice_id)
 	await crawl.finished
 
 
-func _play_cutscene(beats: Array, lying: bool) -> void:
-	cutscene.play(beats, lying)
+func _play_cutscene(beats: Array, lying: bool, scene: String) -> void:
+	cutscene.play(beats, lying, scene)
 	await cutscene.finished
 
 
@@ -203,10 +237,17 @@ func _update_tung_tung(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if mode == Mode.INTRO and event is InputEventMouseButton and event.pressed:
+		_end_intro()
+		return
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
-	if event.keycode in [KEY_ENTER, KEY_SPACE] and mode == Mode.TITLE:
-		_begin_game()
+	if event.keycode in [KEY_ENTER, KEY_SPACE]:
+		match mode:
+			Mode.INTRO:
+				_end_intro()
+			Mode.TITLE:
+				_begin_game()
 
 
 func _input_dir() -> Vector2:
@@ -326,11 +367,11 @@ func _complete_night() -> void:
 		GameState.strength = minf(1.0, GameState.strength + GameState.GAIN_PER_NIGHT)
 	mode = Mode.STORY
 	var status := "Your lines grow stronger." if cheats == 0 else "You slipped through %d secret wall%s. Your lines did not grow." % [cheats, "" if cheats == 1 else "s"]
-	await _play_crawl(Story.MEMORIES[GameState.night - 1],
+	await _play_crawl(Story.MEMORIES[GameState.night - 1], "memory_%d" % GameState.night,
 		"\n\n%s\nLine strength: %d%%" % [status, roundi(GameState.strength * 100)])
 	if GameState.is_last_night():
-		await _play_crawl(Story.FINALE)
-		await _play_cutscene(Story.FINALE_SCENE, false)
+		await _play_crawl(Story.FINALE, "finale")
+		await _play_cutscene(Story.FINALE_SCENE, false, "ending")
 		_show_title()
 	else:
 		GameState.night += 1
@@ -340,7 +381,7 @@ func _complete_night() -> void:
 func _fade_away() -> void:
 	simon.stop()
 	mode = Mode.STORY
-	await _play_crawl(Story.FADED)
+	await _play_crawl(Story.FADED, "faded")
 	_show_title()
 
 
